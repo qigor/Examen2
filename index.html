@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafío DIP: Nivel Experto II</title>
+<style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .container { background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 600px; }
+    h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+    p.subtitle { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
+    .question { display: none; }
+    .question.active { display: block; animation: fadeIn 0.5s; }
+    .options { list-style: none; padding: 0; }
+    .options li { margin: 10px 0; }
+    .btn { width: 100%; padding: 12px; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; transition: all 0.3s; text-align: left; font-size: 16px; }
+    .btn:hover { background-color: #f8f9fa; border-color: #bdc3c7; }
+    .btn.correct { background-color: #d4edda; border-color: #28a745; color: #155724; }
+    .btn.wrong { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
+    .feedback { margin-top: 15px; padding: 10px; border-radius: 5px; display: none; background-color: #f8f9fa; border-left: 5px solid #3498db; }
+    .feedback.show { display: block; }
+    .next-btn { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; float: right; margin-top: 15px; display: none; font-size: 16px; }
+    .next-btn:hover { background-color: #2980b9; }
+    .score-board { text-align: center; display: none; }
+    .progress { height: 8px; background: #e0e0e0; margin-bottom: 20px; border-radius: 5px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #3498db; width: 0%; transition: width 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Examen DIP ⚖️</h1>
+    <p class="subtitle">Edición Especial: Preguntas Avanzadas</p>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    
+    <div id="quiz-container"></div>
+    
+    <div class="score-board" id="scoreBoard">
+        <h2>¡Examen Finalizado!</h2>
+        <p style="font-size: 1.2em;">Tu puntuación: <strong id="score">0</strong> / 15</p>
+        <p id="finalMessage" style="margin: 20px 0; color: #555;"></p>
+        <button class="next-btn" onclick="location.reload()" style="display:inline-block; float:none;">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "1. Diferencia entre 'Plácet' (Agreement) y 'Exequátur' en las relaciones diplomáticas/consulares:\nI. El Plácet es la aceptación del Jefe de Misión Diplomática (Embajador).\nII. El Exequátur es la autorización para que el Cónsul ejerza funciones.\nIII. Ambos se refieren a la aprobación de tratados internacionales.",
+    "a": ["I y II", "II y III", "Solo I", "Todas son correctas"],
+    "c": 0,
+    [span_0](start_span)[span_1](start_span)"r": "Correcto[span_0](end_span)[span_1](end_span). El Plácet (Agreement) es para Embajadores y el Exequátur es la autorización del Jefe de Estado para los Cónsules. No tienen que ver con tratados."
+  },
+  {
+    "q": "2. ¿Qué distingue a una Organización 'Supranacional' (como la UE) de una 'Intergubernamental' (como la ONU)?\nI. En la Supranacional, las normas tienen validez inmediata en los estados (aplicación directa).\nII. En la Supranacional, los órganos actúan en nombre del organismo, no de los estados.\nIII. La ONU es supranacional porque el Consejo de Seguridad emite resoluciones.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_2](start_span)"r": "Correcto[span_2](end_span). La ONU es intergubernamental (representantes soberanos); la UE es supranacional (cesión de soberanía y validez inmediata de normas)."
+  },
+  {
+    "q": "3. Sobre la 'Suspensión de Garantías' en el Pacto de San José (Art. 27):\nI. Se pueden suspender todos los derechos en caso de guerra o peligro público.\nII. No se puede suspender el derecho a la vida, integridad, nombre ni nacionalidad, entre otros.\nIII. Las garantías judiciales indispensables para proteger esos derechos NO se pueden suspender.",
+    "a": ["Solo II", "II y III", "I y III", "Solo I"],
+    "c": 1,
+    [span_3](start_span)"r": "Correcto[span_3](end_span). El Art. 27 prohíbe suspender derechos fundamentales (vida, nombre, etc.) y las garantías judiciales indispensables para protegerlos."
+  },
+  {
+    "q": "4. En el TIAR (Tratado Interamericano de Asistencia Recíproca), ¿cuál es la condición para la legítima defensa colectiva?\nI. Un ataque armado contra un Estado Americano.\nII. Que el ataque sea 'no provocado'.\nIII. Que el ataque provenga necesariamente de una potencia extracontinental.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_4](start_span)[span_5](start_span)"r": "Correcto[span_4](end_span)[span_5](end_span). El ataque debe ser armado y no provocado (Art. 9 TIAR). Puede ser intra o extracontinental."
+  },
+  {
+    "q": "5. ¿Qué establece la 'Teoría de los Sectores' respecto a la Antártida?\nI. Divide el continente en triángulos con vértice en el Polo Sur.\nII. Beneficia a países como Rusia, EE.UU. y Brasil.\nIII. Tredinnick propone que sea 'Patrimonio Común de la Humanidad' o Sudamericano, rechazando el reparto exclusivo.",
+    "a": ["I y III", "I y II", "Solo II", "Todas"],
+    "c": 0,
+    [span_6](start_span)"r": "Correcto[span_6](end_span). La teoría de sectores es un reparto geométrico; Tredinnick propone la internacionalización como patrimonio común."
+  },
+  {
+    "q": "6. Sobre la validez de los Tratados (Nulidad): ¿Cuál es la diferencia entre la coacción sobre el representante y sobre el Estado?\nI. La coacción sobre el representante vicia el consentimiento (Art. 51).\nII. La coacción sobre el Estado por amenaza/uso de fuerza viola la Carta ONU y el tratado es nulo (Art. 52).\nIII. La corrupción del representante no es causal de nulidad.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_7](start_span)"r": "Correcto[span_7](end_span). Ambas coacciones generan nulidad. La corrupción (Art. 50) SÍ es causal de nulidad (la III es falsa)."
+  },
+  {
+    "q": "7. En Derecho Humanitario, ¿cuál es la diferencia entre el Protocolo I y el Protocolo II de 1977?\nI. El Protocolo I protege víctimas de conflictos internacionales.\nII. El Protocolo II protege víctimas de conflictos internos (guerras civiles).\nIII. Ambos se aplican solo en tiempos de paz.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_8](start_span)"r": "Correcto[span_8](end_span). El DIH se aplica en conflicto armado. I es para internacionales, II es para conflictos sin carácter internacional (internos)."
+  },
+  {
+    "q": "8. Respecto a la 'Satisfacción' como forma de reparación internacional:\nI. Se aplica cuando el daño es moral o inmaterial (ofensa al Estado).\nII. Puede consistir en pedir disculpas oficiales o castigar a los culpables.\nIII. Incluye el pago de sumas multimillonarias como indemnización punitiva.",
+    "a": ["I y II", "II y III", "Solo III", "Todas"],
+    "c": 0,
+    [span_9](start_span)"r": "Correcto[span_9](end_span). La satisfacción busca reparar el honor (disculpas). No suele implicar indemnización punitiva económica (III es falsa)."
+  },
+  {
+    "q": "9. ¿Qué estatus tiene la Declaración Universal de DD.HH. (1948)?\nI. Es un tratado vinculante ratificado por los congresos.\nII. Técnicamente es una resolución de la Asamblea General, no un tratado.\nIII. Su valor moral y aceptación la han convertido en norma consuetudinaria obligatoria.",
+    "a": ["I y III", "II y III", "Solo I", "Solo II"],
+    "c": 1,
+    [span_10](start_span)"r": "Correcto[span_10](end_span). Nació como declaración (no tratado estricto) pero hoy es obligatoria por costumbre internacional y principios generales."
+  },
+  {
+    "q": "10. En el Derecho del Mar, el 'Paso Inocente':\nI. Es un derecho de navegación por el Mar Territorial de otro Estado.\nII. Debe ser rápido, ininterrumpido y no perjudicial para la paz/seguridad.\nIII. Incluye el derecho de los submarinos a navegar sumergidos.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_11](start_span)"r": "Correcto[span_11](end_span). En el mar territorial hay soberanía con excepción del paso inocente. Los submarinos deben navegar en superficie (III es falsa)."
+  },
+  {
+    "q": "11. Sobre el reconocimiento de Estados, ¿cuál es la teoría aceptada por la OEA (Art. 9 Carta)?\nI. Constitutiva: El Estado no existe hasta que lo reconocen los demás.\nII. Declarativa: La existencia política del Estado es independiente de su reconocimiento.\nIII. El reconocimiento es un acto obligatorio, no voluntario.",
+    "a": ["Solo I", "Solo II", "II y III", "Solo III"],
+    "c": 1,
+    [span_12](start_span)"r": "Correcto[span_12](end_span). El reconocimiento solo constata una realidad preexistente; la existencia política es independiente del reconocimiento."
+  },
+  {
+    "q": "12. Diferencia entre violación de DD.HH. y delito común:\nI. Si un particular mata a otro, es un delito.\nII. Si un agente del Estado mata (o permite matar por omisión) es violación de DD.HH.\nIII. Para la víctima el efecto es el mismo, pero jurídicamente la responsabilidad del Estado es la clave.",
+    "a": ["Solo I", "I y II", "Todas", "Solo III"],
+    "c": 2,
+    [span_13](start_span)"r": "Correcto[span_13](end_span). Todas son premisas ciertas según el texto para distinguir la imputabilidad al Estado como único garante."
+  },
+  {
+    "q": "13. ¿Qué órganos componen el 'Sistema Interamericano' de protección de DD.HH.?\nI. La Comisión (Washington) y la Corte (San José).\nII. La Corte Internacional de Justicia (La Haya).\nIII. La Comisión tiene funciones de promoción y recibe denuncias individuales.",
+    "a": ["I y III", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_14](start_span)"r": "Correcto[span_14](end_span). El sistema (Pacto San José) se compone de Comisión y Corte IDH. La CIJ es de la ONU (II es falsa)."
+  },
+  {
+    "q": "14. En la solución de controversias, ¿cuál es la característica del 'Arbitraje' frente al 'Arreglo Judicial'?\nI. En el arbitraje, las partes eligen a los árbitros (jueces ad hoc).\nII. En el arreglo judicial, el tribunal es permanente y preexistente.\nIII. La sentencia arbitral no es obligatoria, la judicial sí.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_15](start_span)"r": "Correcto[span_15](end_span). Ambas sentencias son obligatorias (III es falsa). La diferencia clave es la elección del tribunal vs tribunal permanente."
+  },
+  {
+    "q": "15. ¿Qué es la 'Cláusula Federal' en tratados de DD.HH.?\nI. Permite a los estados federales no cumplir tratados en sus provincias.\nII. Obliga al gobierno nacional a cumplir en lo federal y tomar medidas para que las provincias cumplan en lo local.\nIII. Exime de responsabilidad internacional si una provincia viola el tratado.",
+    "a": ["Solo I", "Solo II", "I y III", "Solo III"],
+    "c": 1,
+    [span_16](start_span)"r": "Correcto[span_16](end_span). El Estado central (federal) responde por todo y debe gestionar el cumplimiento interno inmediato."
+  }
+];
+
+let currentQuestion = 0;
+let score = 0;
+const container = document.getElementById('quiz-container');
+const progressBar = document.getElementById('progressBar');
+
+function loadQuiz() {
+    container.innerHTML = '';
+    quizData.forEach((data, index) => {
+        const qDiv = document.createElement('div');
+        qDiv.classList.add('question');
+        if (index === 0) qDiv.classList.add('active');
+        qDiv.setAttribute('id', `q${index}`);
+
+        let html = `<h3>${data.q}</h3><ul class="options">`;
+        data.a.forEach((opt, i) => {
+            html += `<li><button class="btn" onclick="checkAnswer(${index}, ${i}, this)">${opt}</button></li>`;
+        });
+        html += `</ul><div class="feedback" id="feed${index}"></div>`;
+        html += `<button class="next-btn" id="next${index}" onclick="nextQuestion(${index})">Siguiente ➡️</button>`;
+        
+        qDiv.innerHTML = html;
+        container.appendChild(qDiv);
+    });
+}
+
+function checkAnswer(qIndex, aIndex, btn) {
+    const data = quizData[qIndex];
+    const feedback = document.getElementById(`feed${qIndex}`);
+    const nextBtn = document.getElementById(`next${qIndex}`);
+    const allBtns = document.querySelectorAll(`#q${qIndex} .btn`);
+
+    allBtns.forEach(b => b.disabled = true);
+
+    if (aIndex === data.c) {
+        btn.classList.add('correct');
+        feedback.innerHTML = `<p style="color:green; font-weight:bold;">✅ ¡Excelente!</p><p>${data.r}</p>`;
+        score++;
+    } else {
+        btn.classList.add('wrong');
+        allBtns[data.c].classList.add('correct');
+        feedback.innerHTML = `<p style="color:red; font-weight:bold;">❌ Incorrecto</p><p>${data.r}</p>`;
+    }
+    
+    feedback.classList.add('show');
+    nextBtn.style.display = 'block';
+    
+    const progress = ((qIndex + 1) / quizData.length) * 100;
+    progressBar.style.width = `${progress}%`;
+}
+
+function nextQuestion(index) {
+    document.getElementById(`q${index}`).classList.remove('active');
+    
+    if (index < quizData.length - 1) {
+        document.getElementById(`q${index + 1}`).classList.add('active');
+    } else {
+        showResults();
+    }
+}
+
+function showResults() {
+    document.getElementById('quiz-container').style.display = 'none';
+    document.getElementById('scoreBoard').style.display = 'block';
+    document.getElementById('score').innerText = score;
+    
+    const msg = document.getElementById('finalMessage');
+    if (score === 15) msg.innerText = "🏆 ¡PERFECTO! Eres una genio del Derecho Internacional.";
+    else if (score >= 11) msg.innerText = "😎 ¡Muy bien! Tienes conocimientos sólidos.";
+    else if (score >= 8) msg.innerText = "😐 Aprobado, pero hay que repasar.";
+    else msg.innerText = "📚 ¡A estudiar! El parcial está cerca.";<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafío DIP: Nivel Experto II</title>
+<style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .container { background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 600px; }
+    h1 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+    p.subtitle { text-align: center; color: #7f8c8d; margin-bottom: 20px; }
+    .question { display: none; }
+    .question.active { display: block; animation: fadeIn 0.5s; }
+    .options { list-style: none; padding: 0; }
+    .options li { margin: 10px 0; }
+    .btn { width: 100%; padding: 12px; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; transition: all 0.3s; text-align: left; font-size: 16px; }
+    .btn:hover { background-color: #f8f9fa; border-color: #bdc3c7; }
+    .btn.correct { background-color: #d4edda; border-color: #28a745; color: #155724; }
+    .btn.wrong { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
+    .feedback { margin-top: 15px; padding: 10px; border-radius: 5px; display: none; background-color: #f8f9fa; border-left: 5px solid #3498db; }
+    .feedback.show { display: block; }
+    .next-btn { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; float: right; margin-top: 15px; display: none; font-size: 16px; }
+    .next-btn:hover { background-color: #2980b9; }
+    .score-board { text-align: center; display: none; }
+    .progress { height: 8px; background: #e0e0e0; margin-bottom: 20px; border-radius: 5px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #3498db; width: 0%; transition: width 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Examen DIP ⚖️</h1>
+    <p class="subtitle">Edición Especial: Preguntas Avanzadas</p>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    
+    <div id="quiz-container"></div>
+    
+    <div class="score-board" id="scoreBoard">
+        <h2>¡Examen Finalizado!</h2>
+        <p style="font-size: 1.2em;">Tu puntuación: <strong id="score">0</strong> / 15</p>
+        <p id="finalMessage" style="margin: 20px 0; color: #555;"></p>
+        <button class="next-btn" onclick="location.reload()" style="display:inline-block; float:none;">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    "q": "1. Diferencia entre 'Plácet' (Agreement) y 'Exequátur' en las relaciones diplomáticas/consulares:\nI. El Plácet es la aceptación del Jefe de Misión Diplomática (Embajador).\nII. El Exequátur es la autorización para que el Cónsul ejerza funciones.\nIII. Ambos se refieren a la aprobación de tratados internacionales.",
+    "a": ["I y II", "II y III", "Solo I", "Todas son correctas"],
+    "c": 0,
+    [span_0](start_span)[span_1](start_span)"r": "Correcto[span_0](end_span)[span_1](end_span). El Plácet (Agreement) es para Embajadores y el Exequátur es la autorización del Jefe de Estado para los Cónsules. No tienen que ver con tratados."
+  },
+  {
+    "q": "2. ¿Qué distingue a una Organización 'Supranacional' (como la UE) de una 'Intergubernamental' (como la ONU)?\nI. En la Supranacional, las normas tienen validez inmediata en los estados (aplicación directa).\nII. En la Supranacional, los órganos actúan en nombre del organismo, no de los estados.\nIII. La ONU es supranacional porque el Consejo de Seguridad emite resoluciones.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_2](start_span)"r": "Correcto[span_2](end_span). La ONU es intergubernamental (representantes soberanos); la UE es supranacional (cesión de soberanía y validez inmediata de normas)."
+  },
+  {
+    "q": "3. Sobre la 'Suspensión de Garantías' en el Pacto de San José (Art. 27):\nI. Se pueden suspender todos los derechos en caso de guerra o peligro público.\nII. No se puede suspender el derecho a la vida, integridad, nombre ni nacionalidad, entre otros.\nIII. Las garantías judiciales indispensables para proteger esos derechos NO se pueden suspender.",
+    "a": ["Solo II", "II y III", "I y III", "Solo I"],
+    "c": 1,
+    [span_3](start_span)"r": "Correcto[span_3](end_span). El Art. 27 prohíbe suspender derechos fundamentales (vida, nombre, etc.) y las garantías judiciales indispensables para protegerlos."
+  },
+  {
+    "q": "4. En el TIAR (Tratado Interamericano de Asistencia Recíproca), ¿cuál es la condición para la legítima defensa colectiva?\nI. Un ataque armado contra un Estado Americano.\nII. Que el ataque sea 'no provocado'.\nIII. Que el ataque provenga necesariamente de una potencia extracontinental.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_4](start_span)[span_5](start_span)"r": "Correcto[span_4](end_span)[span_5](end_span). El ataque debe ser armado y no provocado (Art. 9 TIAR). Puede ser intra o extracontinental."
+  },
+  {
+    "q": "5. ¿Qué establece la 'Teoría de los Sectores' respecto a la Antártida?\nI. Divide el continente en triángulos con vértice en el Polo Sur.\nII. Beneficia a países como Rusia, EE.UU. y Brasil.\nIII. Tredinnick propone que sea 'Patrimonio Común de la Humanidad' o Sudamericano, rechazando el reparto exclusivo.",
+    "a": ["I y III", "I y II", "Solo II", "Todas"],
+    "c": 0,
+    [span_6](start_span)"r": "Correcto[span_6](end_span). La teoría de sectores es un reparto geométrico; Tredinnick propone la internacionalización como patrimonio común."
+  },
+  {
+    "q": "6. Sobre la validez de los Tratados (Nulidad): ¿Cuál es la diferencia entre la coacción sobre el representante y sobre el Estado?\nI. La coacción sobre el representante vicia el consentimiento (Art. 51).\nII. La coacción sobre el Estado por amenaza/uso de fuerza viola la Carta ONU y el tratado es nulo (Art. 52).\nIII. La corrupción del representante no es causal de nulidad.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_7](start_span)"r": "Correcto[span_7](end_span). Ambas coacciones generan nulidad. La corrupción (Art. 50) SÍ es causal de nulidad (la III es falsa)."
+  },
+  {
+    "q": "7. En Derecho Humanitario, ¿cuál es la diferencia entre el Protocolo I y el Protocolo II de 1977?\nI. El Protocolo I protege víctimas de conflictos internacionales.\nII. El Protocolo II protege víctimas de conflictos internos (guerras civiles).\nIII. Ambos se aplican solo en tiempos de paz.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_8](start_span)"r": "Correcto[span_8](end_span). El DIH se aplica en conflicto armado. I es para internacionales, II es para conflictos sin carácter internacional (internos)."
+  },
+  {
+    "q": "8. Respecto a la 'Satisfacción' como forma de reparación internacional:\nI. Se aplica cuando el daño es moral o inmaterial (ofensa al Estado).\nII. Puede consistir en pedir disculpas oficiales o castigar a los culpables.\nIII. Incluye el pago de sumas multimillonarias como indemnización punitiva.",
+    "a": ["I y II", "II y III", "Solo III", "Todas"],
+    "c": 0,
+    [span_9](start_span)"r": "Correcto[span_9](end_span). La satisfacción busca reparar el honor (disculpas). No suele implicar indemnización punitiva económica (III es falsa)."
+  },
+  {
+    "q": "9. ¿Qué estatus tiene la Declaración Universal de DD.HH. (1948)?\nI. Es un tratado vinculante ratificado por los congresos.\nII. Técnicamente es una resolución de la Asamblea General, no un tratado.\nIII. Su valor moral y aceptación la han convertido en norma consuetudinaria obligatoria.",
+    "a": ["I y III", "II y III", "Solo I", "Solo II"],
+    "c": 1,
+    [span_10](start_span)"r": "Correcto[span_10](end_span). Nació como declaración (no tratado estricto) pero hoy es obligatoria por costumbre internacional y principios generales."
+  },
+  {
+    "q": "10. En el Derecho del Mar, el 'Paso Inocente':\nI. Es un derecho de navegación por el Mar Territorial de otro Estado.\nII. Debe ser rápido, ininterrumpido y no perjudicial para la paz/seguridad.\nIII. Incluye el derecho de los submarinos a navegar sumergidos.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_11](start_span)"r": "Correcto[span_11](end_span). En el mar territorial hay soberanía con excepción del paso inocente. Los submarinos deben navegar en superficie (III es falsa)."
+  },
+  {
+    "q": "11. Sobre el reconocimiento de Estados, ¿cuál es la teoría aceptada por la OEA (Art. 9 Carta)?\nI. Constitutiva: El Estado no existe hasta que lo reconocen los demás.\nII. Declarativa: La existencia política del Estado es independiente de su reconocimiento.\nIII. El reconocimiento es un acto obligatorio, no voluntario.",
+    "a": ["Solo I", "Solo II", "II y III", "Solo III"],
+    "c": 1,
+    [span_12](start_span)"r": "Correcto[span_12](end_span). El reconocimiento solo constata una realidad preexistente; la existencia política es independiente del reconocimiento."
+  },
+  {
+    "q": "12. Diferencia entre violación de DD.HH. y delito común:\nI. Si un particular mata a otro, es un delito.\nII. Si un agente del Estado mata (o permite matar por omisión) es violación de DD.HH.\nIII. Para la víctima el efecto es el mismo, pero jurídicamente la responsabilidad del Estado es la clave.",
+    "a": ["Solo I", "I y II", "Todas", "Solo III"],
+    "c": 2,
+    [span_13](start_span)"r": "Correcto[span_13](end_span). Todas son premisas ciertas según el texto para distinguir la imputabilidad al Estado como único garante."
+  },
+  {
+    "q": "13. ¿Qué órganos componen el 'Sistema Interamericano' de protección de DD.HH.?\nI. La Comisión (Washington) y la Corte (San José).\nII. La Corte Internacional de Justicia (La Haya).\nIII. La Comisión tiene funciones de promoción y recibe denuncias individuales.",
+    "a": ["I y III", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_14](start_span)"r": "Correcto[span_14](end_span). El sistema (Pacto San José) se compone de Comisión y Corte IDH. La CIJ es de la ONU (II es falsa)."
+  },
+  {
+    "q": "14. En la solución de controversias, ¿cuál es la característica del 'Arbitraje' frente al 'Arreglo Judicial'?\nI. En el arbitraje, las partes eligen a los árbitros (jueces ad hoc).\nII. En el arreglo judicial, el tribunal es permanente y preexistente.\nIII. La sentencia arbitral no es obligatoria, la judicial sí.",
+    "a": ["I y II", "II y III", "Solo I", "Todas"],
+    "c": 0,
+    [span_15](start_span)"r": "Correcto[span_15](end_span). Ambas sentencias son obligatorias (III es falsa). La diferencia clave es la elección del tribunal vs tribunal permanente."
+  },
+  {
+    "q": "15. ¿Qué es la 'Cláusula Federal' en tratados de DD.HH.?\nI. Permite a los estados federales no cumplir tratados en sus provincias.\nII. Obliga al gobierno nacional a cumplir en lo federal y tomar medidas para que las provincias cumplan en lo local.\nIII. Exime de responsabilidad internacional si una provincia viola el tratado.",
+    "a": ["Solo I", "Solo II", "I y III", "Solo III"],
+    "c": 1,
+    [span_16](start_span)"r": "Correcto[span_16](end_span). El Estado central (federal) responde por todo y debe gestionar el cumplimiento interno inmediato."
+  }
+];
+
+let currentQuestion = 0;
+let score = 0;
+const container = document.getElementById('quiz-container');
+const progressBar = document.getElementById('progressBar');
+
+function loadQuiz() {
+    container.innerHTML = '';
+    quizData.forEach((data, index) => {
+        const qDiv = document.createElement('div');
+        qDiv.classList.add('question');
+        if (index === 0) qDiv.classList.add('active');
+        qDiv.setAttribute('id', `q${index}`);
+
+        let html = `<h3>${data.q}</h3><ul class="options">`;
+        data.a.forEach((opt, i) => {
+            html += `<li><button class="btn" onclick="checkAnswer(${index}, ${i}, this)">${opt}</button></li>`;
+        });
+        html += `</ul><div class="feedback" id="feed${index}"></div>`;
+        html += `<button class="next-btn" id="next${index}" onclick="nextQuestion(${index})">Siguiente ➡️</button>`;
+        
+        qDiv.innerHTML = html;
+        container.appendChild(qDiv);
+    });
+}
+
+function checkAnswer(qIndex, aIndex, btn) {
+    const data = quizData[qIndex];
+    const feedback = document.getElementById(`feed${qIndex}`);
+    const nextBtn = document.getElementById(`next${qIndex}`);
+    const allBtns = document.querySelectorAll(`#q${qIndex} .btn`);
+
+    allBtns.forEach(b => b.disabled = true);
+
+    if (aIndex === data.c) {
+        btn.classList.add('correct');
+        feedback.innerHTML = `<p style="color:green; font-weight:bold;">✅ ¡Excelente!</p><p>${data.r}</p>`;
+        score++;
+    } else {
+        btn.classList.add('wrong');
+        allBtns[data.c].classList.add('correct');
+        feedback.innerHTML = `<p style="color:red; font-weight:bold;">❌ Incorrecto</p><p>${data.r}</p>`;
+    }
+    
+    feedback.classList.add('show');
+    nextBtn.style.display = 'block';
+    
+    const progress = ((qIndex + 1) / quizData.length) * 100;
+    progressBar.style.width = `${progress}%`;
+}
+
+function nextQuestion(index) {
+    document.getElementById(`q${index}`).classList.remove('active');
+    
+    if (index < quizData.length - 1) {
+        document.getElementById(`q${index + 1}`).classList.add('active');
+    } else {
+        showResults();
+    }
+}
+
+function showResults() {
+    document.getElementById('quiz-container').style.display = 'none';
+    document.getElementById('scoreBoard').style.display = 'block';
+    document.getElementById('score').innerText = score;
+    
+    const msg = document.getElementById('finalMessage');
+    if (score === 15) msg.innerText = "🏆 ¡PERFECTO! Eres un genio del Derecho Internacional.";
+    else if (score >= 11) msg.innerText = "😎 ¡Muy bien! Tienes conocimientos sólidos.";
+    else if (score >= 8) msg.innerText = "😐 Aprobado, pero hay que repasar.";
+    else msg.innerText = "📚 ¡A estudiar! El parcial está cerca.";
+}
+
+loadQuiz();
+</script>
+
+</body>
+</html>
+
+}
+
+loadQuiz();
+</script>
+
+</body>
+</html>
